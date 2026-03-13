@@ -51,7 +51,7 @@ animeStyleTransform/
 
 │   ├── weights/          # 预训练模型权重
 
-│   ├── samples/          # 测试图片和转换结果
+│   ├── animeganv2.py     # 转换模块
 
 │   └── requirements.txt  # 依赖清单
 
