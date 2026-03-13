@@ -17,13 +17,17 @@ git clone https://github.com/asd154160/animeStyleTransform.git
 cd animeStyleTransform
 
 2. 安装依赖
-运行
-# CUDA 11.8 版本的torch
-pip install torch>=1.7.1 torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
-# 再安装其他依赖
-pip install Pillow numpy opencv-python matplotlib django>=3.2
-# 验证安装是否成功
-python -c "import torch, torchvision, cv2; print('torch版本:', torch.__version__); print('安装成功')"
+
+用清华镜像源加速安装（国内必加，避免超时）
+
+pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+
+(电脑有N卡可以安装GUP版本torch加速  
+pip install torch>=1.7.1 torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118)
+
+验证
+
+python -c "import requests, torchvision, bs4, cv2, torch, numpy, PIL, tqdm; print('所有依赖安装成功！')"
 
 3. 运行项目
 # 项目根目录下直接运行，无需切换目录 或者 Pycharm里运行manage.py
@@ -49,7 +53,7 @@ animeStyleTransform/
 
 │   ├── samples/          # 测试图片和转换结果
 
-│   └── requirements.txt  # 风格转换依赖清单
+│   └── requirements.txt  # 依赖清单
 
 ├── db.sqlite3            # Django 默认数据库
 
