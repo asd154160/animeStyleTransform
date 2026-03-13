@@ -13,8 +13,9 @@ from crawler.img_download import fn as crawler_fn
 from transform.animeganv2 import fn as transform_fn
 
 # 默认路径
-DEFAULT_UPLOAD_DIR = r"D:\pycharm\code\animeStyleTransform\media\uploads"
-DEFAULT_OUTPUT_DIR = r"D:\pycharm\code\animeStyleTransform\media\outputs"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DEFAULT_UPLOAD_DIR = os.path.join(BASE_DIR, "media", "uploads")
+DEFAULT_OUTPUT_DIR = os.path.join(BASE_DIR, "media", "outputs")
 
 
 def index(request):

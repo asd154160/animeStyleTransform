@@ -14,6 +14,8 @@ headers = {
     "user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0",
     }
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 def create_re_session():
     session = requests.Session()
     re_strategy=Retry(total=2, backoff_factor=0.3, status_forcelist=[429, 500, 502, 503, 504],allowed_methods=["GET"])
@@ -59,7 +61,7 @@ def get_images(url,custom_headers=None):
 
     return list(img_urls)
 
-def download_img(img_url, save_dir=r"D:\pycharm\code\animeStyleTransform\media\uploads"):
+def download_img(img_url, save_dir=os.path.join(BASE_DIR, "media", "uploads")):
     time.sleep(random.uniform(0.01, 0.1)) # 反反爬
     try:
         resp = requests.get(img_url, headers=headers, stream=True, timeout=10)
@@ -98,7 +100,7 @@ def download_img(img_url, save_dir=r"D:\pycharm\code\animeStyleTransform\media\u
         print("下载失败:", img_url, e)
         return None
 
-def batch_download(img_urls, save_dir=r"D:\pycharm\code\animeStyleTransform\media\uploads"):  #线程池提高效率
+def batch_download(img_urls, save_dir=os.path.join(BASE_DIR, "media", "uploads")):  #线程池提高效率
     os.makedirs(save_dir, exist_ok=True)
     downloaded = []  # 记录成功下载的图片
 
@@ -126,7 +128,7 @@ def batch_download(img_urls, save_dir=r"D:\pycharm\code\animeStyleTransform\medi
 
     return downloaded
 
-def fn(target_url, save_dir=r"D:\pycharm\code\animeStyleTransform\media\uploads", custom_headers=None):
+def fn(target_url, save_dir=os.path.join(BASE_DIR, "media", "uploads"), custom_headers=None):
 
     # 自定义 headers
     if custom_headers:

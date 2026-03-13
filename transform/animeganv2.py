@@ -21,10 +21,10 @@ animegan2-pytorch/raw/main/weights/paprika.pt
 sys.path.append(os.path.join(os.path.dirname(__file__), "animegan2-pytorch-main"))
 from transform.model import Generator  # 直接从源码导入模型
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# INPUT_DIR = r"D:\pycharm\code\animeStyleTransform\media\uploads"        # 爬虫图片文件夹
-# OUTPUT_DIR = r"D:\pycharm\code\animeStyleTransform\media\outputs" # 转换后保存路径
-MODEL_PATH = r"D:\pycharm\code\animeStyleTransform\transform\weights\paprika.pt" # 下载的权重文件路径
+
+MODEL_PATH = os.path.join(BASE_DIR, "weights", "paprika.pt") # 下载的权重文件路径
 USE_GPU = True  # 有GPU设为True，无则保持False
 
 # 图片预处理/后处理
@@ -50,7 +50,7 @@ def batch_convert(input_dir, output_dir):
     # 加载模型
     device = torch.device("cuda" if USE_GPU and torch.cuda.is_available() else "cpu")
     model = Generator()
-    # 加载权重时忽略不匹配的参数（解决running_mean/running_var缺失问题）
+    # 加载权重时忽略不匹配的参数
     state_dict = torch.load(MODEL_PATH, map_location=device)
     model.load_state_dict(state_dict, strict=False)  # strict=False 关键！
     model.to(device)
@@ -92,6 +92,6 @@ def batch_convert(input_dir, output_dir):
                 continue
     print(f"\n转换完成！所有图片已保存到：{os.path.abspath(output_dir)}")
     return success_count, total_count  # 返回元组 (成功数, 总数)
-def fn(input_dir=r"D:\pycharm\code\animeStyleTransform\media\uploads", output_dir=r"D:\pycharm\code\animeStyleTransform\media\outputs"):
+def fn(input_dir=os.path.join(BASE_DIR, "media", "uploads"), output_dir=os.path.join(BASE_DIR, "media", "outputs")):
     return batch_convert(input_dir,output_dir)
 
