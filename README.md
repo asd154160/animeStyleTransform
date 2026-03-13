@@ -9,8 +9,9 @@
 环境要求
 Python 3.8+
 
-
 快速开始
+
+
 1. 克隆仓库
 git clone https://github.com/asd154160/animeStyleTransform.git
 cd animeStyleTransform
@@ -31,14 +32,25 @@ python manage.py runserver
 
 📂 项目结构
 plaintext
+
 animeStyleTransform/
+
 ├── animeStyleTransform/  # Django 项目核心配置
+
 ├── crawler/              # 图片爬虫模块
+
 ├── media/uploads/        # 爬取/上传的图片存储目录
+
 ├── myapp/                # Django 业务逻辑模块（网页界面）
+
 ├── transform/            # 动漫风格转换核心（AnimeGANv2）
+
 │   ├── weights/          # 预训练模型权重
+
 │   ├── samples/          # 测试图片和转换结果
+
 │   └── requirements.txt  # 风格转换依赖清单
+
 ├── db.sqlite3            # Django 默认数据库
+
 └── manage.py             # Django 项目管理入口
