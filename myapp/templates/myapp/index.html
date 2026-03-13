@@ -1,0 +1,50 @@
+{% extends 'myapp/base.html' %}
+
+{% block title %}首页 - 动漫风格转换系统{% endblock %}
+
+{% block content %}
+    <div class="card" style="text-align: center; padding: 60px 40px;">
+        <h2 style="font-size: 2em; margin-bottom: 20px; color: #333;">欢迎使用动漫风格转换系统</h2>
+        <p style="font-size: 1.1em; color: #666; margin-bottom: 40px; line-height: 1.8;">
+            本系统提供两步式图片处理流程：<br>
+            <strong>第一步：</strong>输入任意网页URL，自动爬取页面中的所有图片<br>
+            <strong>第二步：</strong>使用 AnimeGANv2 模型将图片转换为动漫风格
+        </p>
+
+        <div style="display: flex; justify-content: center; gap: 30px; flex-wrap: wrap;">
+            <a href="{% url 'crawler' %}" style="text-decoration: none;">
+                <div style="padding: 30px 50px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 20px; cursor: pointer; transition: transform 0.3s;">
+                    <h3 style="font-size: 1.5em; margin-bottom: 10px;">图片爬取</h3>
+                    <p>从网页批量下载图片</p>
+                </div>
+            </a>
+
+            <a href="{% url 'transform' %}" style="text-decoration: none;">
+                <div style="padding: 30px 50px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; border-radius: 20px; cursor: pointer; transition: transform 0.3s;">
+                    <h3 style="font-size: 1.5em; margin-bottom: 10px;">风格转换</h3>
+                    <p>AI转换为动漫风格</p>
+                </div>
+            </a>
+        </div>
+
+        <div style="margin-top: 50px; padding: 30px; background: #f8f9fa; border-radius: 15px;">
+            <h3 style="color: #333; margin-bottom: 15px;">📁 默认路径配置</h3>
+            <p style="color: #666; font-family: monospace; font-size: 0.9em;">
+                上传目录: D:\pycharm\code\animeStyleTransform\media\uploads<br>
+                输出目录: D:\pycharm\code\animeStyleTransform\media\outputs
+            </p>
+        </div>
+
+        <!-- 开发者信息 -->
+        <div style="margin-top: 50px; padding: 25px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 15px;">
+            <h3 style="margin-bottom: 15px; font-size: 1.2em;">系统开发信息</h3>
+            <p style="font-size: 0.95em; line-height: 1.8; opacity: 0.95;">
+                <strong>开发者：</strong>杨<br>
+                <strong>联系电话：</strong>166-2311-6044<br>
+                <strong>电子邮箱：</strong>1541602596@qq.com<br>
+                <strong>开发单位：</strong>个人<br>
+                <strong>版本号：</strong>v1.0.0 | Django 5.2 + AnimeGANv2
+            </p>
+        </div>
+    </div>
+{% endblock %}
