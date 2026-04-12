@@ -1,9 +1,0 @@
-torch>=1.7.1
-torchvision
-requests
-beautifulsoup4
-opencv-python
-numpy
-Pillow
-lxml
-django==3.2
