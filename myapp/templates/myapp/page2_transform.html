@@ -125,12 +125,28 @@
 
                 <div class="form-group">
                     <label for="input_dir">📂 输入文件夹（包含原始图片）</label>
-                    <input type="text" id="input_dir" name="input_dir" value="{{ default_input_dir }}">
+                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 8px;">
+                        <input type="text" id="input_dir" name="input_dir" value="{{ default_input_dir }}" 
+                               placeholder="选择或输入目录路径"
+                               style="flex: 1; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1em;">
+                        <button type="button" onclick="selectDirectory('input_dir')"
+                                style="padding: 10px 16px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; white-space: nowrap;">
+                            📂 选择目录
+                        </button>
+                    </div>
                 </div>
 
                 <div class="form-group">
                     <label for="output_dir_folder">📂 输出文件夹（保存转换后图片）</label>
-                    <input type="text" id="output_dir_folder" name="output_dir" value="{{ default_output_dir }}">
+                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 8px;">
+                        <input type="text" id="output_dir_folder" name="output_dir" value="{{ default_output_dir }}"
+                               placeholder="选择或输入目录路径"
+                               style="flex: 1; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1em;">
+                        <button type="button" onclick="selectDirectory('output_dir_folder')"
+                                style="padding: 10px 16px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; white-space: nowrap;">
+                            📂 选择目录
+                        </button>
+                    </div>
                 </div>
 
                 <button type="submit" class="btn btn-primary">开始批量转换</button>
@@ -156,7 +172,15 @@
 
                 <div class="form-group">
                     <label for="output_dir_single">📂 输出文件夹</label>
-                    <input type="text" id="output_dir_single" name="output_dir" value="{{ default_output_dir }}">
+                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 8px;">
+                        <input type="text" id="output_dir_single" name="output_dir" value="{{ default_output_dir }}"
+                               placeholder="选择或输入目录路径"
+                               style="flex: 1; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1em;">
+                        <button type="button" onclick="selectDirectory('output_dir_single')"
+                                style="padding: 10px 16px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; white-space: nowrap;">
+                            📂 选择目录
+                        </button>
+                    </div>
                 </div>
 
                 <button type="submit" class="btn btn-primary">转换单张图片</button>
@@ -190,6 +214,103 @@
                 content.classList.remove('active');
             });
             document.getElementById(tab + '-tab').classList.add('active');
+        }
+
+        // 改进的目录选择器
+        function selectDirectory(inputId) {
+            const input = document.getElementById(inputId);
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.webkitdirectory = true;
+            
+            fileInput.onchange = function(e) {
+                if (e.target.files.length > 0) {
+                    const file = e.target.files[0];
+                    
+                    // 方法1：尝试从 webkitRelativePath 获取路径
+                    const relativePath = file.webkitRelativePath;
+                    
+                    // 方法2：尝试从 File API 获取完整路径
+                    let fullPath = '';
+                    if (file.mozFullPath) {
+                        fullPath = file.mozFullPath;
+                    } else if (file.webkitRelativePath) {
+                        fullPath = file.webkitRelativePath;
+                    }
+                    
+                    // 分析路径
+                    let finalPath = '';
+                    
+                    // 检查是否是相对路径格式（如 "media/uploads/xxx.jpg"）
+                    if (relativePath && relativePath.includes('/')) {
+                        const dirParts = relativePath.split('/');
+                        if (['media', 'uploads', 'outputs', 'animeStyleTransform'].includes(dirParts[0])) {
+                            finalPath = dirParts.slice(0, -1).join('\\').replace(/\//g, '\\');
+                            if (finalPath) {
+                                input.value = finalPath;
+                                showSuccess('已选择目录：' + finalPath);
+                                return;
+                            }
+                        }
+                    }
+                    
+                    // 如果是完整路径，尝试提取相对路径部分
+                    if (fullPath && (fullPath.includes('\\') || fullPath.includes('/'))) {
+                        // 尝试提取 media 之后的部分
+                        const mediaMatch = fullPath.match(/media[\\/]([^\\/.]+)/i);
+                        if (mediaMatch) {
+                            const subDir = mediaMatch[1];
+                            if (subDir === 'uploads' || subDir === 'outputs') {
+                                finalPath = 'media\\' + subDir;
+                                input.value = finalPath;
+                                showSuccess('已选择目录：' + finalPath);
+                                return;
+                            }
+                        }
+                        
+                        // 尝试提取 animeStyleTransform 之后的部分
+                        const projectMatch = fullPath.match(/animeStyleTransform[\\/]([^\\/.]+)/i);
+                        if (projectMatch) {
+                            const subDir = projectMatch[1];
+                            if (subDir === 'media') {
+                                const mediaMatch2 = fullPath.match(/media[\\/]([^\\/.]+)/i);
+                                if (mediaMatch2) {
+                                    finalPath = 'media\\' + mediaMatch2[1];
+                                    input.value = finalPath;
+                                    showSuccess('已选择目录：' + finalPath);
+                                    return;
+                                }
+                            } else if (subDir === 'uploads' || subDir === 'outputs') {
+                                finalPath = 'animeStyleTransform\\' + subDir;
+                                input.value = finalPath;
+                                showSuccess('已选择目录：' + finalPath);
+                                return;
+                            }
+                        }
+                    }
+                    
+                    // 无法识别路径，显示提示
+                    showWarning('已选择目录，但由于浏览器限制无法获取完整路径。<br>请手动输入相对路径，例如：<br>• media\\uploads<br>• media\\outputs<br>• animeStyleTransform\\uploads');
+                }
+            };
+            
+            fileInput.click();
+        }
+
+        function showSuccess(message) {
+            const div = document.createElement('div');
+            div.style.cssText = 'position: fixed; top: 20px; right: 20px; padding: 15px 20px; background: #4CAF50; color: white; border-radius: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 9999; font-size: 14px;';
+            div.innerHTML = '✓ ' + message;
+            document.body.appendChild(div);
+            setTimeout(() => div.remove(), 3000);
+        }
+
+        function showWarning(message) {
+            const div = document.createElement('div');
+            div.style.cssText = 'position: fixed; top: 20px; right: 20px; padding: 15px 20px; background: #ff9800; color: white; border-radius: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 9999; font-size: 14px; max-width: 400px;';
+            div.innerHTML = '⚠️ ' + message;
+            document.body.appendChild(div);
+            setTimeout(() => div.remove(), 5000);
         }
     </script>
 {% endblock %}

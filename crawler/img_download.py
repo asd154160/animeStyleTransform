@@ -9,17 +9,20 @@ from concurrent.futures import ThreadPoolExecutor,as_completed
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-# 基础请求头，可以选择添加其他参数 cookie,accept-language,referer等
-headers = {
-    "user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0",
-    }
+import config
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# 基础请求头（从配置文件加载）
+headers = config.DEFAULT_HEADERS.copy()
 
 def create_re_session():
     session = requests.Session()
-    re_strategy=Retry(total=2, backoff_factor=0.3, status_forcelist=[429, 500, 502, 503, 504],allowed_methods=["GET"])
-    adapter = HTTPAdapter(max_retries=re_strategy) # 装入适配器
+    re_strategy=Retry(
+        total=config.RETRY_COUNT, 
+        backoff_factor=config.RETRY_BACKOFF_FACTOR, 
+        status_forcelist=config.RETRY_STATUS_CODES,
+        allowed_methods=["GET"]
+    )
+    adapter = HTTPAdapter(max_retries=re_strategy)
     session.mount('http://', adapter)
     session.mount('https://', adapter)
     session.headers.update(headers)
@@ -45,7 +48,10 @@ def get_images(url,custom_headers=None):
         src = img.get("src") or img.get("data-src") or img.get("data-original")
         if src:   # 如果不为空，urllib.parse进行补全url路径
             full_url = urljoin(base_url, src.strip())
-            if "istockphoto.com" not in full_url:  # 过滤istockphoto外链
+            # 过滤 istockphoto 外链
+            if config.FILTER_ISTOCKPHOTO and "istockphoto.com" not in full_url:
+                img_urls.add(full_url)
+            elif not config.FILTER_ISTOCKPHOTO:
                 img_urls.add(full_url)
 
     # 2. 爬 background-image 背景图
@@ -56,15 +62,20 @@ def get_images(url,custom_headers=None):
         if match:
             bg_url = match.group(1).strip()
             full_url = urljoin(base_url, bg_url.strip())
-            if "istockphoto.com" not in full_url:
+            if config.FILTER_ISTOCKPHOTO and "istockphoto.com" not in full_url:
+                img_urls.add(full_url)
+            elif not config.FILTER_ISTOCKPHOTO:
                 img_urls.add(full_url)
 
     return list(img_urls)
 
-def download_img(img_url, save_dir=os.path.join(BASE_DIR, "media", "uploads")):
-    time.sleep(random.uniform(0.01, 0.1)) # 反反爬
+def download_img(img_url, save_dir=None):
+    if save_dir is None:
+        save_dir = config.DEFAULT_UPLOAD_DIR
+    
+    time.sleep(random.uniform(config.DOWNLOAD_DELAY_MIN, config.DOWNLOAD_DELAY_MAX))
     try:
-        resp = requests.get(img_url, headers=headers, stream=True, timeout=10)
+        resp = requests.get(img_url, headers=headers, stream=True, timeout=config.REQUEST_TIMEOUT)
         resp.raise_for_status()
 
         # 过滤非图片URL
@@ -100,11 +111,14 @@ def download_img(img_url, save_dir=os.path.join(BASE_DIR, "media", "uploads")):
         print("下载失败:", img_url, e)
         return None
 
-def batch_download(img_urls, save_dir=os.path.join(BASE_DIR, "media", "uploads")):  #线程池提高效率
+def batch_download(img_urls, save_dir=None):
+    if save_dir is None:
+        save_dir = config.DEFAULT_UPLOAD_DIR
+    
     os.makedirs(save_dir, exist_ok=True)
-    downloaded = []  # 记录成功下载的图片
+    downloaded = []
 
-    with ThreadPoolExecutor(max_workers=5) as executor:
+    with ThreadPoolExecutor(max_workers=config.MAX_WORKERS) as executor:
         # 提交所有任务
         future_to_url = {
             executor.submit(download_img, img_url, save_dir): img_url
@@ -128,11 +142,13 @@ def batch_download(img_urls, save_dir=os.path.join(BASE_DIR, "media", "uploads")
 
     return downloaded
 
-def fn(target_url, save_dir=os.path.join(BASE_DIR, "media", "uploads"), custom_headers=None):
+def fn(target_url, save_dir=None, custom_headers=None):
+    if save_dir is None:
+        save_dir = config.DEFAULT_UPLOAD_DIR
 
     # 自定义 headers
     if custom_headers:
-        headers.update(custom_headers)  # 更新默认 headers
+        headers.update(custom_headers)
 
     image_list = get_images(target_url)
     downloaded_list = batch_download(image_list, save_dir)

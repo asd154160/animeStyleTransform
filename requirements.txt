@@ -1,0 +1,17 @@
+# Django Web Framework
+django==3.2
+
+# Deep Learning & Image Processing
+torch>=1.7.1
+torchvision
+opencv-python>=4.5.0
+numpy>=1.20.0
+Pillow>=9.0.0
+
+# Web Crawling
+requests>=2.25.0
+beautifulsoup4>=4.9.0
+lxml>=4.6.0
+
+# Utilities
+tqdm>=4.60.0

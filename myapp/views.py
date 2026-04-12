@@ -8,14 +8,18 @@ import json
 import tempfile
 import shutil
 
+import config
 from transform.animeganv2 import batch_convert
 from crawler.img_download import fn as crawler_fn
 from transform.animeganv2 import fn as transform_fn
 
-# 默认路径
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DEFAULT_UPLOAD_DIR = os.path.join(BASE_DIR, "media", "uploads")
-DEFAULT_OUTPUT_DIR = os.path.join(BASE_DIR, "media", "outputs")
+# 从配置文件加载默认路径（绝对路径用于后端处理）
+DEFAULT_UPLOAD_DIR = config.DEFAULT_UPLOAD_DIR
+DEFAULT_OUTPUT_DIR = config.DEFAULT_OUTPUT_DIR
+
+# 相对路径用于前端显示
+RELATIVE_UPLOAD_DIR = config.RELATIVE_UPLOAD_DIR
+RELATIVE_OUTPUT_DIR = config.RELATIVE_OUTPUT_DIR
 
 
 def index(request):
@@ -26,18 +30,21 @@ def index(request):
 def page1_crawler(request):
     """页面1：图片爬取"""
     context = {
-        'default_save_dir': DEFAULT_UPLOAD_DIR
+        'default_save_dir': RELATIVE_UPLOAD_DIR
     }
 
     if request.method == 'POST':
         url = request.POST.get('url', '').strip()
-        save_dir = request.POST.get('save_dir', DEFAULT_UPLOAD_DIR).strip()
+        save_dir_input = request.POST.get('save_dir', RELATIVE_UPLOAD_DIR).strip()
         custom_headers = request.POST.get('custom_headers', '').strip()
+
+        # 将相对路径转换为绝对路径
+        save_dir = config.get_absolute_path(save_dir_input)
 
         if not url:
             context['error'] = '请输入有效的URL'
             context['url'] = url
-            context['save_dir'] = save_dir
+            context['save_dir'] = save_dir_input
             context['custom_headers'] = custom_headers
             return render(request, 'myapp/page1_crawler.html', context)
 
@@ -58,17 +65,17 @@ def page1_crawler(request):
             count, urls = crawler_fn(url, save_dir, headers_dict)
 
             context['success'] = True
-            context['message'] = f'成功下载 {count} 张图片到 {save_dir}'
+            context['message'] = f'成功下载 {count} 张图片到 {save_dir_input}'
             context['found_count'] = len(urls)
             context['download_count'] = count
             context['url'] = url
-            context['save_dir'] = save_dir
+            context['save_dir'] = save_dir_input
             context['custom_headers'] = custom_headers
 
         except Exception as e:
             context['error'] = f'爬取失败: {str(e)}'
             context['url'] = url
-            context['save_dir'] = save_dir
+            context['save_dir'] = save_dir_input
             context['custom_headers'] = custom_headers
 
     return render(request, 'myapp/page1_crawler.html', context)
@@ -77,8 +84,8 @@ def page1_crawler(request):
 def page2_transform(request):
     """页面2：风格转换"""
     context = {
-        'default_input_dir': DEFAULT_UPLOAD_DIR,
-        'default_output_dir': DEFAULT_OUTPUT_DIR
+        'default_input_dir': RELATIVE_UPLOAD_DIR,
+        'default_output_dir': RELATIVE_OUTPUT_DIR
     }
 
     if request.method == 'POST':
@@ -86,8 +93,12 @@ def page2_transform(request):
 
         if action == 'folder':
             # 文件夹批量转换
-            input_dir = request.POST.get('input_dir', DEFAULT_UPLOAD_DIR).strip()
-            output_dir = request.POST.get('output_dir', DEFAULT_OUTPUT_DIR).strip()
+            input_dir_input = request.POST.get('input_dir', RELATIVE_UPLOAD_DIR).strip()
+            output_dir_input = request.POST.get('output_dir', RELATIVE_OUTPUT_DIR).strip()
+
+            # 将相对路径转换为绝对路径
+            input_dir = config.get_absolute_path(input_dir_input)
+            output_dir = config.get_absolute_path(output_dir_input)
 
             try:
                 os.makedirs(output_dir, exist_ok=True)
@@ -95,8 +106,8 @@ def page2_transform(request):
 
                 context['success'] = True
                 context['message'] = f'转换完成！成功 {success_count}/{total} 张'
-                context['input_dir'] = input_dir
-                context['output_dir'] = output_dir
+                context['input_dir'] = input_dir_input
+                context['output_dir'] = output_dir_input
 
             except Exception as e:
                 context['error'] = f'转换失败: {str(e)}'
@@ -105,7 +116,10 @@ def page2_transform(request):
             # 单张图片上传转换
             if 'image' in request.FILES:
                 image = request.FILES['image']
-                output_dir = request.POST.get('output_dir', DEFAULT_OUTPUT_DIR).strip()
+                output_dir_input = request.POST.get('output_dir', RELATIVE_OUTPUT_DIR).strip()
+
+                # 将相对路径转换为绝对路径
+                output_dir = config.get_absolute_path(output_dir_input)
 
                 try:
                     os.makedirs(output_dir, exist_ok=True)
@@ -118,7 +132,7 @@ def page2_transform(request):
                         context['success'] = True
                         context['message'] = f'单张图片转换成功！'
                         context['output_image'] = f"anime_{image.name}"
-                        context['output_dir'] = output_dir
+                        context['output_dir'] = output_dir_input
                     else:
                         context['error'] = '转换失败，请检查图片格式'
 
@@ -173,7 +187,10 @@ def api_crawler(request):
     try:
         data = json.loads(request.body)
         url = data.get('url')
-        save_dir = data.get('save_dir', DEFAULT_UPLOAD_DIR)
+        save_dir_input = data.get('save_dir', RELATIVE_UPLOAD_DIR)
+
+        # 将相对路径转换为绝对路径
+        save_dir = config.get_absolute_path(save_dir_input)
 
         if not url:
             return JsonResponse({'success': False, 'error': 'URL不能为空'})
@@ -185,7 +202,7 @@ def api_crawler(request):
             'success': True,
             'downloaded': count,
             'found': len(urls),
-            'save_dir': save_dir
+            'save_dir': save_dir_input
         })
 
     except Exception as e:
@@ -198,8 +215,12 @@ def api_transform(request):
     """API接口：风格转换"""
     try:
         data = json.loads(request.body)
-        input_dir = data.get('input_dir', DEFAULT_UPLOAD_DIR)
-        output_dir = data.get('output_dir', DEFAULT_OUTPUT_DIR)
+        input_dir_input = data.get('input_dir', RELATIVE_UPLOAD_DIR)
+        output_dir_input = data.get('output_dir', RELATIVE_OUTPUT_DIR)
+
+        # 将相对路径转换为绝对路径
+        input_dir = config.get_absolute_path(input_dir_input)
+        output_dir = config.get_absolute_path(output_dir_input)
 
         os.makedirs(output_dir, exist_ok=True)
         success_count, total = transform_fn(input_dir, output_dir)
@@ -208,7 +229,7 @@ def api_transform(request):
             'success': True,
             'converted': success_count,
             'total': total,
-            'output_dir': output_dir
+            'output_dir': output_dir_input
         })
 
     except Exception as e:

@@ -6,26 +6,20 @@ import numpy as np
 from PIL import Image
 from tqdm import tqdm
 
+import config
+
 '''
 注：animeganv2 模型源码在 GitHub：https://github.com/bryandlee/animegan2-pytorch
-
 访问：https://github.com/bryandlee/animegan2-pytorch
-把下载的 animegan2-pytorch-main.zip 解压到你的项目目录
-此py文件要在animegan2-pytorch-main/animegan2-pytorch-main/animeganv2.py
-
-animegan2-pytorch/raw/main/weights/paprika.pt
-把 paprika.pt 文件放到你的项目目录下
 '''
 
 # 添加源码路径到系统环境
 sys.path.append(os.path.join(os.path.dirname(__file__), "animegan2-pytorch-main"))
 from transform.model import Generator  # 直接从源码导入模型
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-
-MODEL_PATH = os.path.join(BASE_DIR, "weights", "paprika.pt") # 下载的权重文件路径
-USE_GPU = True  # 有GPU设为True，无则保持False
+# 从配置文件加载模型路径和 GPU 设置
+MODEL_PATH = config.MODEL_CONFIG[config.DEFAULT_MODEL]["path"]
+USE_GPU = config.USE_GPU
 
 # 图片预处理/后处理
 def preprocess(img, size=512):
@@ -57,8 +51,8 @@ def batch_convert(input_dir, output_dir):
     model.eval()
 
     # 获取所有图片
-    img_ext = ['.jpg', '.jpeg', '.png', '.webp', '.bmp']
-    img_files = [f for f in os.listdir(input_dir) if os.path.splitext(f)[1].lower() in img_ext]
+    img_files = [f for f in os.listdir(input_dir) 
+                 if os.path.splitext(f)[1].lower() in config.IMAGE_EXTENSIONS]
 
     if not img_files:
         print(f"输入文件夹 {input_dir} 无图片")
@@ -92,6 +86,10 @@ def batch_convert(input_dir, output_dir):
                 continue
     print(f"\n转换完成！所有图片已保存到：{os.path.abspath(output_dir)}")
     return success_count, total_count  # 返回元组 (成功数, 总数)
-def fn(input_dir=os.path.join(BASE_DIR, "media", "uploads"), output_dir=os.path.join(BASE_DIR, "media", "outputs")):
-    return batch_convert(input_dir,output_dir)
+def fn(input_dir=None, output_dir=None):
+    if input_dir is None:
+        input_dir = config.DEFAULT_UPLOAD_DIR
+    if output_dir is None:
+        output_dir = config.DEFAULT_OUTPUT_DIR
+    return batch_convert(input_dir, output_dir)
 
