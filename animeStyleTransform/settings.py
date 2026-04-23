@@ -116,7 +116,6 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = "static/"
-STATICFILES_DIRS = [r"D:\pycharm\code\animeStyleTransform\media"]
 
 # 媒体文件配置
 MEDIA_URL = '/media/'

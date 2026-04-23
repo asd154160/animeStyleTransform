@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+  <style>
+.loading-icon {
+  animation: spin 1s linear infinite;
+  stroke-dashoffset: 0;
+  transform-origin: center;
+}
+
+@keyframes spin {
+  0% { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: -80; }
+}
+  </style>
+  <circle cx="16" cy="16" r="12" stroke="lightgrey" stroke-width="4" fill="none"/>
+  <circle cx="16" cy="16" r="12" stroke="black" stroke-width="4" fill="none" stroke-dasharray="20 20" class="loading-icon"/>
+</svg>

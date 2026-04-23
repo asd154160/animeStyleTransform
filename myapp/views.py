@@ -1,9 +1,11 @@
 import os
-from django.shortcuts import render, redirect
+from pathlib import Path
+from django.shortcuts import render
 from django.http import JsonResponse
 from django.conf import settings
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
+from django.utils.text import get_valid_filename
 import json
 import tempfile
 import shutil
@@ -20,6 +22,15 @@ DEFAULT_OUTPUT_DIR = config.DEFAULT_OUTPUT_DIR
 # 相对路径用于前端显示
 RELATIVE_UPLOAD_DIR = config.RELATIVE_UPLOAD_DIR
 RELATIVE_OUTPUT_DIR = config.RELATIVE_OUTPUT_DIR
+
+
+def media_url_for_path(path):
+    """Return a served media URL when the file is inside MEDIA_ROOT."""
+    try:
+        relative_path = Path(path).resolve().relative_to(Path(settings.MEDIA_ROOT).resolve())
+    except ValueError:
+        return None
+    return settings.MEDIA_URL + str(relative_path).replace("\\", "/")
 
 
 def index(request):
@@ -106,6 +117,8 @@ def page2_transform(request):
 
                 context['success'] = True
                 context['message'] = f'转换完成！成功 {success_count}/{total} 张'
+                context['converted'] = success_count
+                context['total'] = total
                 context['input_dir'] = input_dir_input
                 context['output_dir'] = output_dir_input
 
@@ -125,13 +138,15 @@ def page2_transform(request):
                     os.makedirs(output_dir, exist_ok=True)
 
                     # 直接传递文件对象，不保存原始图片
-                    output_path = os.path.join(output_dir, f"anime_{image.name}")
+                    output_name = f"anime_{get_valid_filename(image.name)}"
+                    output_path = os.path.join(output_dir, output_name)
                     result = transform_single_image(image, output_path)
 
                     if result:
                         context['success'] = True
                         context['message'] = f'单张图片转换成功！'
-                        context['output_image'] = f"anime_{image.name}"
+                        context['output_image'] = output_name
+                        context['output_image_url'] = media_url_for_path(output_path)
                         context['output_dir'] = output_dir_input
                     else:
                         context['error'] = '转换失败，请检查图片格式'

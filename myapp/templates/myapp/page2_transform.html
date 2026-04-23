@@ -1,316 +1,135 @@
 {% extends 'myapp/base.html' %}
 
-{% block title %}风格转换 - 动漫风格转换系统{% endblock %}
-
-{% block extra_css %}
-    <style>
-        .tab-buttons {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 30px;
-            border-bottom: 2px solid #e0e0e0;
-            padding-bottom: 10px;
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        .preview-box {
-            margin-top: 20px;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            text-align: center;
-        }
-
-        .preview-box img {
-            max-width: 100%;
-            max-height: 400px;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
-
-
-        .tab-buttons .tab-btn {
-            padding: 10px 25px;
-            border: none;
-            background: #165DFF;
-            color: #FFFFFF;
-            cursor: pointer;
-            font-size: 16px;
-            border-bottom: 3px solid transparent;
-            transition: all 0.3s;
-        }
-
-        .tab-buttons .tab-btn:hover {
-            background: #0E42C7;
-            color: #FFFFFF;
-        }
-
-        .tab-buttons .tab-btn.active {
-            background: #0E42C7;
-            color: #FFFFFF;
-            border-bottom-color: #092B8A;
-            font-weight: 600;
-        }
-
-        .card .btn-primary,
-        .card input[type="submit"].btn-primary {
-            background: #165DFF;
-            color: #FFFFFF;
-            border: none;
-            padding: 12px 24px;
-            font-size: 16px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-
-        .card .btn-primary:hover,
-        .card input[type="submit"].btn-primary:hover {
-            background: #0E42C7;
-            color: #FFFFFF;
-        }
-    </style>
-{% endblock %}
+{% block title %}风格转换 - AnimeStyleTransform{% endblock %}
 
 {% block content %}
-    <div class="card">
-        <h2 style="margin-bottom: 30px; color: #333;">AnimeGANv2 风格转换</h2>
+    <section class="page-heading">
+        <div>
+            <p class="eyebrow">AnimeGANv2</p>
+            <h1>风格转换</h1>
+            <p class="lead">将本地图片转换为动漫风格。批量模式适合处理爬取素材，单张模式适合快速验证效果。</p>
+        </div>
+    </section>
 
-        {% if error %}
-            <div class="alert alert-error">
-                ❌ {{ error }}
+    <section class="workspace-grid">
+        <div class="panel">
+            <div class="panel-body">
+                {% if error %}
+                    <div class="notice error">{{ error }}</div>
+                {% endif %}
+
+                {% if success %}
+                    <div class="notice success">{{ message }}</div>
+
+                    {% if output_image %}
+                        <div class="preview">
+                            {% if output_image_url %}
+                                <img src="{{ output_image_url }}" alt="转换结果预览">
+                            {% endif %}
+                            <div class="preview-meta">
+                                保存位置：{{ output_dir }}\{{ output_image }}
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="result-grid">
+                            <div class="result-stat">
+                                <strong>{{ converted }}</strong>
+                                <span>成功转换</span>
+                            </div>
+                            <div class="result-stat">
+                                <strong>{{ total }}</strong>
+                                <span>输入图片</span>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endif %}
+
+                <div class="mode-switch" role="tablist" aria-label="转换模式">
+                    <button type="button" class="tab-btn active" onclick="switchTab('folder', this)">文件夹批量</button>
+                    <button type="button" class="tab-btn" onclick="switchTab('single', this)">单张上传</button>
+                </div>
+
+                <div id="folder-tab" class="tab-content active">
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="folder">
+
+                        <div class="field-group">
+                            <label for="input_dir">输入文件夹</label>
+                            <div class="input-action">
+                                <input type="text" id="input_dir" name="input_dir"
+                                       value="{{ input_dir|default:default_input_dir }}"
+                                       placeholder="media\uploads">
+                                <button type="button" class="secondary" onclick="selectDirectory('input_dir')">选择目录</button>
+                            </div>
+                        </div>
+
+                        <div class="field-group">
+                            <label for="output_dir_folder">输出文件夹</label>
+                            <div class="input-action">
+                                <input type="text" id="output_dir_folder" name="output_dir"
+                                       value="{{ output_dir|default:default_output_dir }}"
+                                       placeholder="media\outputs">
+                                <button type="button" class="secondary" onclick="selectDirectory('output_dir_folder')">选择目录</button>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="full">开始批量转换</button>
+                    </form>
+                </div>
+
+                <div id="single-tab" class="tab-content">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="single">
+
+                        <div class="field-group">
+                            <label for="image">图片文件</label>
+                            <input type="file" id="image" name="image" accept=".jpg,.jpeg,.png,.webp,.bmp" required>
+                        </div>
+
+                        <div class="field-group">
+                            <label for="output_dir_single">输出文件夹</label>
+                            <div class="input-action">
+                                <input type="text" id="output_dir_single" name="output_dir"
+                                       value="{{ output_dir|default:default_output_dir }}"
+                                       placeholder="media\outputs">
+                                <button type="button" class="secondary" onclick="selectDirectory('output_dir_single')">选择目录</button>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="full">转换单张图片</button>
+                    </form>
+                </div>
             </div>
-        {% endif %}
+        </div>
 
-        {% if success %}
-            <div class="alert alert-success">
-                ✅ {{ message }}
+        <aside class="panel side-panel">
+            <div class="panel-body">
+                <h3>模型说明</h3>
+                <p>默认使用 Paprika 权重。输入图片会缩放到模型尺寸，支持 JPG、PNG、WebP、BMP。</p>
+                <div class="path-list">
+                    <code>transform\weights\paprika.pt</code>
+                    <code>config.DEFAULT_MODEL</code>
+                </div>
+                <p class="hint offset">有 CUDA 环境时可在 <code>config.py</code> 中开启 GPU 加速。</p>
             </div>
-
-            {% if output_image %}
-                <div class="preview-box">
-                    <h4 style="margin-bottom: 15px;">转换结果预览</h4>
-                    <img src="/media/outputs/{{ output_image }}" alt="转换结果">
-                    <p style="margin-top: 10px; color: #666;">保存位置：{{ output_dir }}\{{ output_image }}</p>
-                </div>
-            {% else %}
-                <div class="stats">
-                    <div class="stat-box">
-                        <h3>{{ converted }}</h3>
-                        <p>成功转换</p>
-                    </div>
-                </div>
-                <div style="margin-top: 20px; padding: 15px; background: #e3f2fd; border-radius: 10px;">
-                    <p><strong>输出目录：</strong>{{ output_dir }}</p>
-                </div>
-            {% endif %}
-        {% endif %}
-
-        <div class="tab-buttons">
-            <button class="tab-btn active" onclick="switchTab('folder')">📁 文件夹批量转换</button>
-        </div>
-
-        <!-- 文件夹转换 -->
-        <div id="folder-tab" class="tab-content active">
-            <form method="post">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="folder">
-
-                <div class="form-group">
-                    <label for="input_dir">📂 输入文件夹（包含原始图片）</label>
-                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 8px;">
-                        <input type="text" id="input_dir" name="input_dir" value="{{ default_input_dir }}" 
-                               placeholder="选择或输入目录路径"
-                               style="flex: 1; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1em;">
-                        <button type="button" onclick="selectDirectory('input_dir')"
-                                style="padding: 10px 16px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; white-space: nowrap;">
-                            📂 选择目录
-                        </button>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="output_dir_folder">📂 输出文件夹（保存转换后图片）</label>
-                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 8px;">
-                        <input type="text" id="output_dir_folder" name="output_dir" value="{{ default_output_dir }}"
-                               placeholder="选择或输入目录路径"
-                               style="flex: 1; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1em;">
-                        <button type="button" onclick="selectDirectory('output_dir_folder')"
-                                style="padding: 10px 16px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; white-space: nowrap;">
-                            📂 选择目录
-                        </button>
-                    </div>
-                </div>
-
-                <button type="submit" class="btn btn-primary">开始批量转换</button>
-            </form>
-        </div>
-
-        <br>
-
-        <div class="tab-buttons">
-            <button class="tab-btn" onclick="switchTab('single')">🖼️ 单张图片转换</button>
-        </div>
-
-        <!-- 单张转换 -->
-        <div id="single-tab" class="tab-content">
-            <form method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="single">
-
-                <div class="form-group">
-                    <label for="image">🖼️ 选择图片文件</label>
-                    <input type="file" id="image" name="image" accept=".jpg,.jpeg,.png,.webp,.bmp" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="output_dir_single">📂 输出文件夹</label>
-                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 8px;">
-                        <input type="text" id="output_dir_single" name="output_dir" value="{{ default_output_dir }}"
-                               placeholder="选择或输入目录路径"
-                               style="flex: 1; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1em;">
-                        <button type="button" onclick="selectDirectory('output_dir_single')"
-                                style="padding: 10px 16px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; white-space: nowrap;">
-                            📂 选择目录
-                        </button>
-                    </div>
-                </div>
-
-                <button type="submit" class="btn btn-primary">转换单张图片</button>
-            </form>
-        </div>
-    </div>
-
-    <div class="card" style="background: #f8f9fa;">
-        <h3 style="margin-bottom: 15px; color: #333;">AnimeGANv2 模型说明</h3>
-        <ul style="line-height: 2; color: #666; margin-left: 20px;">
-            <li>基于 PyTorch 的生成对抗网络（GAN）模型</li>
-            <li>自动将真实照片转换为动漫/漫画风格</li>
-            <li>支持 GPU 加速（CUDA），也可使用 CPU 运行</li>
-            <li>推荐输入图片尺寸：512x512（自动缩放）</li>
-            <li>支持格式：JPG、PNG、WebP、BMP</li>
-        </ul>
-    </div>
+        </aside>
+    </section>
 {% endblock %}
 
 {% block extra_js %}
     <script>
-        function switchTab(tab) {
-            // 切换按钮状态
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('active');
+        function switchTab(tab, button) {
+            document.querySelectorAll(".tab-btn").forEach((btn) => {
+                btn.classList.remove("active");
             });
-            event.target.classList.add('active');
+            button.classList.add("active");
 
-            // 切换内容
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.classList.remove('active');
+            document.querySelectorAll(".tab-content").forEach((content) => {
+                content.classList.remove("active");
             });
-            document.getElementById(tab + '-tab').classList.add('active');
-        }
-
-        // 改进的目录选择器
-        function selectDirectory(inputId) {
-            const input = document.getElementById(inputId);
-            const fileInput = document.createElement('input');
-            fileInput.type = 'file';
-            fileInput.webkitdirectory = true;
-            
-            fileInput.onchange = function(e) {
-                if (e.target.files.length > 0) {
-                    const file = e.target.files[0];
-                    
-                    // 方法1：尝试从 webkitRelativePath 获取路径
-                    const relativePath = file.webkitRelativePath;
-                    
-                    // 方法2：尝试从 File API 获取完整路径
-                    let fullPath = '';
-                    if (file.mozFullPath) {
-                        fullPath = file.mozFullPath;
-                    } else if (file.webkitRelativePath) {
-                        fullPath = file.webkitRelativePath;
-                    }
-                    
-                    // 分析路径
-                    let finalPath = '';
-                    
-                    // 检查是否是相对路径格式（如 "media/uploads/xxx.jpg"）
-                    if (relativePath && relativePath.includes('/')) {
-                        const dirParts = relativePath.split('/');
-                        if (['media', 'uploads', 'outputs', 'animeStyleTransform'].includes(dirParts[0])) {
-                            finalPath = dirParts.slice(0, -1).join('\\').replace(/\//g, '\\');
-                            if (finalPath) {
-                                input.value = finalPath;
-                                showSuccess('已选择目录：' + finalPath);
-                                return;
-                            }
-                        }
-                    }
-                    
-                    // 如果是完整路径，尝试提取相对路径部分
-                    if (fullPath && (fullPath.includes('\\') || fullPath.includes('/'))) {
-                        // 尝试提取 media 之后的部分
-                        const mediaMatch = fullPath.match(/media[\\/]([^\\/.]+)/i);
-                        if (mediaMatch) {
-                            const subDir = mediaMatch[1];
-                            if (subDir === 'uploads' || subDir === 'outputs') {
-                                finalPath = 'media\\' + subDir;
-                                input.value = finalPath;
-                                showSuccess('已选择目录：' + finalPath);
-                                return;
-                            }
-                        }
-                        
-                        // 尝试提取 animeStyleTransform 之后的部分
-                        const projectMatch = fullPath.match(/animeStyleTransform[\\/]([^\\/.]+)/i);
-                        if (projectMatch) {
-                            const subDir = projectMatch[1];
-                            if (subDir === 'media') {
-                                const mediaMatch2 = fullPath.match(/media[\\/]([^\\/.]+)/i);
-                                if (mediaMatch2) {
-                                    finalPath = 'media\\' + mediaMatch2[1];
-                                    input.value = finalPath;
-                                    showSuccess('已选择目录：' + finalPath);
-                                    return;
-                                }
-                            } else if (subDir === 'uploads' || subDir === 'outputs') {
-                                finalPath = 'animeStyleTransform\\' + subDir;
-                                input.value = finalPath;
-                                showSuccess('已选择目录：' + finalPath);
-                                return;
-                            }
-                        }
-                    }
-                    
-                    // 无法识别路径，显示提示
-                    showWarning('已选择目录，但由于浏览器限制无法获取完整路径。<br>请手动输入相对路径，例如：<br>• media\\uploads<br>• media\\outputs<br>• animeStyleTransform\\uploads');
-                }
-            };
-            
-            fileInput.click();
-        }
-
-        function showSuccess(message) {
-            const div = document.createElement('div');
-            div.style.cssText = 'position: fixed; top: 20px; right: 20px; padding: 15px 20px; background: #4CAF50; color: white; border-radius: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 9999; font-size: 14px;';
-            div.innerHTML = '✓ ' + message;
-            document.body.appendChild(div);
-            setTimeout(() => div.remove(), 3000);
-        }
-
-        function showWarning(message) {
-            const div = document.createElement('div');
-            div.style.cssText = 'position: fixed; top: 20px; right: 20px; padding: 15px 20px; background: #ff9800; color: white; border-radius: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 9999; font-size: 14px; max-width: 400px;';
-            div.innerHTML = '⚠️ ' + message;
-            document.body.appendChild(div);
-            setTimeout(() => div.remove(), 5000);
+            document.getElementById(tab + "-tab").classList.add("active");
         }
     </script>
 {% endblock %}

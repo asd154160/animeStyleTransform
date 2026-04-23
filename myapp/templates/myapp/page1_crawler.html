@@ -1,110 +1,105 @@
 {% extends 'myapp/base.html' %}
 
-{% block title %}图片爬取 - 动漫风格转换系统{% endblock %}
+{% block title %}图片爬取 - AnimeStyleTransform{% endblock %}
 
 {% block content %}
-    <div class="card">
-        <h2 style="margin-bottom: 30px; color: #333;">图片爬取</h2>
+    <section class="page-heading">
+        <div>
+            <p class="eyebrow">Crawler</p>
+            <h1>图片爬取</h1>
+            <p class="lead">从网页批量收集图片素材，保存在本地媒体目录，供后续动漫风格转换使用。</p>
+        </div>
+    </section>
 
-        <form method="post" style="max-width: 800px;">
-            {% csrf_token %}
+    <section class="workspace-grid">
+        <div class="panel">
+            <div class="panel-body">
+                {% if success %}
+                    <div class="notice success">{{ message }}</div>
+                    <div class="result-grid">
+                        <div class="result-stat">
+                            <strong>{{ found_count }}</strong>
+                            <span>发现图片</span>
+                        </div>
+                        <div class="result-stat">
+                            <strong>{{ download_count }}</strong>
+                            <span>成功下载</span>
+                        </div>
+                    </div>
+                {% endif %}
 
-            <!-- URL 输入 -->
-            <div style="margin-bottom: 20px;">
-                <label style="display: block; margin-bottom: 8px; color: #555; font-weight: 500;">
-                    目标网页 URL
-                </label>
-                <input type="url" name="url" value="{{ url|default:'' }}"
-                       placeholder="https://example.com" required
-                       style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1em;">
-            </div>
+                {% if error %}
+                    <div class="notice error">{{ error }}</div>
+                {% endif %}
 
-            <!-- 保存目录 -->
-            <div style="margin-bottom: 20px;">
-                <label style="display: block; margin-bottom: 8px; color: #555; font-weight: 500;">
-                    保存目录
-                </label>
-                <div style="display: flex; gap: 10px; align-items: center;">
-                    <input type="text" id="save_dir" name="save_dir" value="{{ save_dir|default:default_save_dir }}"
-                           placeholder="选择或输入目录路径"
-                           style="flex: 1; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1em;">
-                    <button type="button" onclick="selectDirectory('save_dir')"
-                            style="padding: 12px 20px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; white-space: nowrap;">
-                        📂 选择目录
-                    </button>
-                </div>
-                <p style="color: #999; font-size: 0.85em; margin-top: 5px;">
-                    点击"选择目录"按钮选择文件夹，或手动输入路径
-                </p>
-            </div>
+                <form method="post">
+                    {% csrf_token %}
 
-            <!-- 自定义 Headers -->
-            <div style="margin-bottom: 20px;">
-                <label style="display: block; margin-bottom: 8px; color: #555; font-weight: 500;">
-                    自定义请求头 (Headers)
-                    <span style="color: #999; font-size: 0.85em; font-weight: normal;"> - 用于绕过反爬验证，可选</span>
-                </label>
-                <textarea name="custom_headers" placeholder="User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36...
+                    <div class="field-group">
+                        <label for="url">目标网页 URL</label>
+                        <input id="url" type="url" name="url" value="{{ url|default:'' }}"
+                               placeholder="https://example.com/gallery" required>
+                        <p class="field-hint">优先使用可直接访问图片列表的页面，动态加载站点可能需要补充 Headers。</p>
+                    </div>
+
+                    <div class="field-group">
+                        <label for="save_dir">保存目录</label>
+                        <div class="input-action">
+                            <input type="text" id="save_dir" name="save_dir"
+                                   value="{{ save_dir|default:default_save_dir }}"
+                                   placeholder="media\uploads">
+                            <button type="button" class="secondary" onclick="selectDirectory('save_dir')">选择目录</button>
+                        </div>
+                    </div>
+
+                    <div class="field-group">
+                        <label for="custom_headers">自定义请求头</label>
+                        <textarea id="custom_headers" name="custom_headers" placeholder="User-Agent: Mozilla/5.0
 Referer: https://www.google.com/
-Cookie: session_id=xxx; token=yyy"
-                          style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 0.9em;
-                                 min-height: 120px; font-family: monospace; resize: vertical;">{{ custom_headers|default:'' }}</textarea>
-                <p style="color: #999; font-size: 0.85em; margin-top: 5px;">
-                    格式：每行一个 Header，格式为 <code>Key: Value</code>，如 <code>User-Agent: Mozilla/5.0...</code>
-                </p>
+Cookie: session_id=xxx; token=yyy">{{ custom_headers|default:'' }}</textarea>
+                        <p class="field-hint">每行一个 Header，格式为 <code>Key: Value</code>。</p>
+                    </div>
+
+                    <div class="field-group">
+                        <label>快捷填充</label>
+                        <div class="quick-actions">
+                            <button type="button" class="secondary" onclick="fillCommonHeaders('pc')">PC 浏览器</button>
+                            <button type="button" class="secondary" onclick="fillCommonHeaders('mobile')">手机浏览器</button>
+                            <button type="button" class="secondary" onclick="clearHeaders()">清空</button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="full">开始爬取</button>
+                </form>
             </div>
+        </div>
 
-            <!-- 常用 Headers 快捷按钮 -->
-            <div style="margin-bottom: 25px;">
-                <label style="display: block; margin-bottom: 8px; color: #555; font-size: 0.9em;">快捷填充：</label>
-                <button type="button" onclick="fillCommonHeaders('pc')"
-                        style="margin-right: 10px; padding: 8px 16px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer;">
-                    PC浏览器
-                </button>
-                <button type="button" onclick="fillCommonHeaders('mobile')"
-                        style="margin-right: 10px; padding: 8px 16px; background: #764ba2; color: white; border: none; border-radius: 5px; cursor: pointer;">
-                    手机浏览器
-                </button>
-                <button type="button" onclick="clearHeaders()"
-                        style="padding: 8px 16px; background: #999; color: white; border: none; border-radius: 5px; cursor: pointer;">
-                    X 清空
-                </button>
+        <aside class="panel side-panel">
+            <div class="panel-body">
+                <h3>路径提示</h3>
+                <p>浏览器通常不能暴露完整本地路径。选择目录后如果没有自动识别，请直接填写项目相对路径。</p>
+                <div class="path-list">
+                    <code>media\uploads</code>
+                    <code>media\outputs</code>
+                </div>
             </div>
+        </aside>
+    </section>
+{% endblock %}
 
-            <button type="submit"
-                    style="width: 100%; padding: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                           color: white; border: none; border-radius: 10px; font-size: 1.1em; cursor: pointer;">
-                开始爬取
-            </button>
-        </form>
-
-        <!-- 结果显示 -->
-        {% if success %}
-            <div style="margin-top: 30px; padding: 20px; background: #d4edda; border-radius: 10px; color: #155724;">
-                <h4 style="margin-bottom: 10px;">✅ {{ message }}</h4>
-                <p>发现图片：{{ found_count }} 张</p>
-                <p>成功下载：{{ download_count }} 张</p>
-            </div>
-        {% endif %}
-
-        {% if error %}
-            <div style="margin-top: 30px; padding: 20px; background: #f8d7da; border-radius: 10px; color: #721c24;">
-                <h4>❌ {{ error }}</h4>
-            </div>
-        {% endif %}
-    </div>
-
+{% block extra_js %}
     <script>
         function fillCommonHeaders(type) {
             const textarea = document.querySelector('textarea[name="custom_headers"]');
-            if (type === 'pc') {
+            if (type === "pc") {
                 textarea.value = `User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36
 Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
 Accept-Language: zh-CN,zh;q=0.9,en;q=0.8
-Accept-Encoding: gzip, deflate, br
 Referer: https://www.google.com/
 Connection: keep-alive`;
-            } else if (type === 'mobile') {
+            }
+
+            if (type === "mobile") {
                 textarea.value = `User-Agent: Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1
 Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
 Accept-Language: zh-CN,zh-Hans;q=0.9
@@ -113,108 +108,7 @@ Referer: https://m.baidu.com/`;
         }
 
         function clearHeaders() {
-            document.querySelector('textarea[name="custom_headers"]').value = '';
-        }
-
-        // 改进的目录选择器
-        function selectDirectory(inputId) {
-            const input = document.getElementById(inputId);
-            const fileInput = document.createElement('input');
-            fileInput.type = 'file';
-            fileInput.webkitdirectory = true;
-            
-            fileInput.onchange = function(e) {
-                if (e.target.files.length > 0) {
-                    const file = e.target.files[0];
-                    
-                    // 方法1：尝试从 webkitRelativePath 获取路径
-                    const relativePath = file.webkitRelativePath;
-                    
-                    // 方法2：尝试从 File API 获取完整路径
-                    // 注意：某些浏览器可能不支持
-                    let fullPath = '';
-                    if (file.mozFullPath) {
-                        fullPath = file.mozFullPath;
-                    } else if (file.webkitRelativePath) {
-                        // webkitRelativePath 通常是相对路径，需要组合
-                        fullPath = file.webkitRelativePath;
-                    }
-                    
-                    // 分析路径
-                    let finalPath = '';
-                    
-                    // 检查是否是相对路径格式（如 "media/uploads/xxx.jpg"）
-                    if (relativePath && relativePath.includes('/')) {
-                        const dirParts = relativePath.split('/');
-                        // 如果第一部分是标准目录名，可能是相对路径
-                        if (['media', 'uploads', 'outputs', 'animeStyleTransform'].includes(dirParts[0])) {
-                            finalPath = dirParts.slice(0, -1).join('\\').replace(/\//g, '\\');
-                            if (finalPath) {
-                                input.value = finalPath;
-                                showSuccess('已选择目录：' + finalPath);
-                                return;
-                            }
-                        }
-                    }
-                    
-                    // 如果是完整路径，尝试提取相对路径部分
-                    if (fullPath && (fullPath.includes('\\') || fullPath.includes('/'))) {
-                        // 尝试提取 media 之后的部分
-                        const mediaMatch = fullPath.match(/media[\\/]([^\\/.]+)/i);
-                        if (mediaMatch) {
-                            const subDir = mediaMatch[1];
-                            if (subDir === 'uploads' || subDir === 'outputs') {
-                                finalPath = 'media\\' + subDir;
-                                input.value = finalPath;
-                                showSuccess('已选择目录：' + finalPath);
-                                return;
-                            }
-                        }
-                        
-                        // 尝试提取 animeStyleTransform 之后的部分
-                        const projectMatch = fullPath.match(/animeStyleTransform[\\/]([^\\/.]+)/i);
-                        if (projectMatch) {
-                            const subDir = projectMatch[1];
-                            if (subDir === 'media') {
-                                // 继续提取 media 下的子目录
-                                const mediaMatch2 = fullPath.match(/media[\\/]([^\\/.]+)/i);
-                                if (mediaMatch2) {
-                                    finalPath = 'media\\' + mediaMatch2[1];
-                                    input.value = finalPath;
-                                    showSuccess('已选择目录：' + finalPath);
-                                    return;
-                                }
-                            } else if (subDir === 'uploads' || subDir === 'outputs') {
-                                finalPath = 'animeStyleTransform\\' + subDir;
-                                input.value = finalPath;
-                                showSuccess('已选择目录：' + finalPath);
-                                return;
-                            }
-                        }
-                    }
-                    
-                    // 无法识别路径，显示提示
-                    showWarning('已选择目录，但由于浏览器限制无法获取完整路径。<br>请手动输入相对路径，例如：<br>• media\\uploads<br>• media\\outputs<br>• animeStyleTransform\\uploads');
-                }
-            };
-            
-            fileInput.click();
-        }
-
-        function showSuccess(message) {
-            const div = document.createElement('div');
-            div.style.cssText = 'position: fixed; top: 20px; right: 20px; padding: 15px 20px; background: #4CAF50; color: white; border-radius: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 9999; font-size: 14px;';
-            div.innerHTML = '✓ ' + message;
-            document.body.appendChild(div);
-            setTimeout(() => div.remove(), 3000);
-        }
-
-        function showWarning(message) {
-            const div = document.createElement('div');
-            div.style.cssText = 'position: fixed; top: 20px; right: 20px; padding: 15px 20px; background: #ff9800; color: white; border-radius: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 9999; font-size: 14px; max-width: 400px;';
-            div.innerHTML = '⚠️ ' + message;
-            document.body.appendChild(div);
-            setTimeout(() => div.remove(), 5000);
+            document.querySelector('textarea[name="custom_headers"]').value = "";
         }
     </script>
 {% endblock %}

@@ -1,5 +1,5 @@
 # Django Web Framework
-django==3.2
+django>=4.2,<5.3
 
 # Deep Learning & Image Processing
 torch>=1.7.1

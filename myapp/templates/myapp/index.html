@@ -1,50 +1,84 @@
 {% extends 'myapp/base.html' %}
+{% load static %}
 
-{% block title %}首页 - 动漫风格转换系统{% endblock %}
+{% block title %}工作台 - AnimeStyleTransform{% endblock %}
 
 {% block content %}
-    <div class="card" style="text-align: center; padding: 60px 40px;">
-        <h2 style="font-size: 2em; margin-bottom: 20px; color: #333;">欢迎使用动漫风格转换系统</h2>
-        <p style="font-size: 1.1em; color: #666; margin-bottom: 40px; line-height: 1.8;">
-            本系统提供两步式图片处理流程：<br>
-            <strong>第一步：</strong>输入任意网页URL，自动爬取页面中的所有图片<br>
-            <strong>第二步：</strong>使用 AnimeGANv2 模型将图片转换为动漫风格
-        </p>
-
-        <div style="display: flex; justify-content: center; gap: 30px; flex-wrap: wrap;">
-            <a href="{% url 'crawler' %}" style="text-decoration: none;">
-                <div style="padding: 30px 50px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 20px; cursor: pointer; transition: transform 0.3s;">
-                    <h3 style="font-size: 1.5em; margin-bottom: 10px;">图片爬取</h3>
-                    <p>从网页批量下载图片</p>
-                </div>
-            </a>
-
-            <a href="{% url 'transform' %}" style="text-decoration: none;">
-                <div style="padding: 30px 50px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; border-radius: 20px; cursor: pointer; transition: transform 0.3s;">
-                    <h3 style="font-size: 1.5em; margin-bottom: 10px;">风格转换</h3>
-                    <p>AI转换为动漫风格</p>
-                </div>
-            </a>
-        </div>
-
-        <div style="margin-top: 50px; padding: 30px; background: #f8f9fa; border-radius: 15px;">
-            <h3 style="color: #333; margin-bottom: 15px;">📁 默认路径配置</h3>
-            <p style="color: #666; font-family: monospace; font-size: 0.9em;">
-                上传目录: animeStyleTransform\media\uploads<br>
-                输出目录: animeStyleTransform\media\outputs
+    <section class="hero">
+        <div class="hero-copy">
+            <p class="eyebrow">Image pipeline</p>
+            <h1>网页图片到动漫风格，一次完成。</h1>
+            <p class="lead">
+                用爬虫收集素材，用 AnimeGANv2 批量转换，在同一个 Django 工作台里完成输入、处理和结果查看。
             </p>
+            <div class="hero-actions">
+                <a class="button" href="{% url 'crawler' %}">开始爬取</a>
+                <a class="button secondary" href="{% url 'transform' %}">转换图片</a>
+            </div>
         </div>
 
-        <!-- 开发者信息 -->
-        <div style="margin-top: 50px; padding: 25px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 15px;">
-            <h3 style="margin-bottom: 15px; font-size: 1.2em;">系统开发信息</h3>
-            <p style="font-size: 0.95em; line-height: 1.8; opacity: 0.95;">
-                <strong>开发者：</strong>杨<br>
-                <strong>联系电话：</strong>166-2311-6044<br>
-                <strong>电子邮箱：</strong>1541602596@qq.com<br>
-                <strong>开发单位：</strong>个人<br>
-                <strong>版本号：</strong>v1.0.0 | Django 5.2 + AnimeGANv2
-            </p>
+        <div class="hero-visual" aria-label="动漫风格转换样张">
+            <img src="{% static 'myapp/images/compare-1.jpg' %}" alt="AnimeGANv2 转换效果样张">
+            <div class="hero-caption">
+                <strong>AnimeGANv2 sample</strong>
+                <span>内置样张用于确认输出的色彩、线条和整体风格。</span>
+            </div>
         </div>
-    </div>
+    </section>
+
+    <section class="section compact">
+        <div class="workflow">
+            <div class="workflow-step">
+                <span class="step-number">01</span>
+                <h3>抓取素材</h3>
+                <p>输入目标网页 URL，可补充 User-Agent、Referer、Cookie 等请求头。</p>
+            </div>
+            <div class="workflow-step">
+                <span class="step-number">02</span>
+                <h3>整理路径</h3>
+                <p>默认读取 <code>media\uploads</code>，输出到 <code>media\outputs</code>。</p>
+            </div>
+            <div class="workflow-step">
+                <span class="step-number">03</span>
+                <h3>生成结果</h3>
+                <p>支持文件夹批量转换，也支持上传单张图片后直接预览结果。</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="page-heading">
+            <div>
+                <p class="eyebrow">Output reference</p>
+                <h2>转换效果样张</h2>
+                <p class="lead">这些图片来自项目内置样例，帮助快速判断当前模型的视觉倾向。</p>
+            </div>
+        </div>
+        <div class="sample-grid">
+            <img src="{% static 'myapp/images/compare-2.jpg' %}" alt="动漫风格转换样张二">
+            <img src="{% static 'myapp/images/compare-3.jpg' %}" alt="动漫风格转换样张三">
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="workspace-grid">
+            <div>
+                <p class="eyebrow">Runtime</p>
+                <h2>运行配置</h2>
+                <p class="lead">
+                    项目通过 <code>config.py</code> 管理模型、媒体目录、爬虫并发和 GPU 开关，适合本地快速调试。
+                </p>
+            </div>
+            <div class="panel">
+                <div class="panel-body">
+                    <h3>默认目录</h3>
+                    <div class="path-list">
+                        <code>media\uploads</code>
+                        <code>media\outputs</code>
+                    </div>
+                    <p class="hint offset">默认模型：Paprika。需要切换风格时修改 <code>DEFAULT_MODEL</code> 后重启服务。</p>
+                </div>
+            </div>
+        </div>
+    </section>
 {% endblock %}
